@@ -45,6 +45,11 @@ double GetAverageZ(double* buffer) {
 	return avg;
 }
 
+double GetSeconds(uint32_t sample, double startTime) {
+	const double SAMPLES = 18.0;
+	return startTime + ((1.0/SAMPLES)*sample);
+}
+
 uint32_t GetGPMField(const char* field, GPMF_stream* ms, double in, double out, measurement* m) {
 	if (GPMF_OK == GPMF_FindNext(ms, STR2FOURCC(field), GPMF_RECURSE_LEVELS))  
 	{
@@ -141,7 +146,8 @@ int main(int argc, char *argv[])
 			GetGPMField(gyro, ms, in, out, measurements);
 			measurement* ptr = measurements;
 			for (i = 0; i < samples; i++) {
-				printf("%.5f, %.5f, %.2f, %.5f\n", ptr->lat, ptr->lon, ptr->speed, ptr->z);
+				double seconds = GetSeconds(i, in);
+				printf("%.2f, %.5f, %.5f, %.2f, %.5f\n", seconds, ptr->lat, ptr->lon, ptr->speed, ptr->z);
 				ptr++;
 			}
 			GPMF_ResetState(ms);
