@@ -33,6 +33,18 @@ typedef struct {
 
 extern void PrintGPMF(GPMF_stream *ms);
 
+double GetAverageZ(double* buffer) {
+	const int SAMPLE_SIZE = 22;  // 399 / 18
+	double avg, total = 0.0;
+	double* ptr = buffer;
+	for (int i = 0; i < SAMPLE_SIZE; i++) {
+		total += *ptr;
+		ptr+=3; // advance to the next sample.
+	}
+	avg = total / SAMPLE_SIZE;
+	return avg;
+}
+
 uint32_t GetGPMField(const char* field, GPMF_stream* ms, double in, double out, measurement* m) {
 	if (GPMF_OK == GPMF_FindNext(ms, STR2FOURCC(field), GPMF_RECURSE_LEVELS))  
 	{
@@ -53,9 +65,14 @@ uint32_t GetGPMField(const char* field, GPMF_stream* ms, double in, double out, 
 				if (key == STR2FOURCC("GPS5")) {
 					mptr->lat = *ptr;
 					mptr->lon = *(ptr+1);
-					mptr->speed = *(ptr+2);
+					mptr->speed = *(ptr+3);
+					ptr += elements; // advance to the next sample.
 				}
-				ptr += elements; // advance to the next sample.
+				else if (key == STR2FOURCC("GYRO")) {
+					mptr->z = GetAverageZ(ptr);
+					ptr += elements * 22; // advance 22 records
+				}
+				
 			}
 			free(tmpbuffer);
 		}
@@ -99,7 +116,7 @@ int main(int argc, char *argv[])
 		uint32_t index, payloads = GetNumberGPMFPayloads();
 		printf("found %.2fs of metadata, from %d payloads, within %s\n", metadatalength, payloads, argv[1]);
 
-		measurement *measurements = malloc(sizeof(measurement) * payloads);
+		measurement* measurements = malloc(sizeof(measurement) * payloads);
 
 		for (index = 0; index < payloads; index++)
 		{
@@ -120,16 +137,14 @@ int main(int argc, char *argv[])
 			const char* gyro = "GYRO"; //ACCL
 			const char* gps = "GPS5"; //ACCL
 			uint32_t i, samples = GetGPMField(gps, ms, in, out, measurements);
-			measurement* ptr = measurements;
-			for (i = 0; i < samples; i++) {
-				printf("%.5f, %.5f, %.2f\n", ptr->lat, ptr->lon, ptr->speed);
-				ptr++;
-			}
-
 			GPMF_ResetState(ms);
 			GetGPMField(gyro, ms, in, out, measurements);
+			measurement* ptr = measurements;
+			for (i = 0; i < samples; i++) {
+				printf("%.5f, %.5f, %.2f, %.5f\n", ptr->lat, ptr->lon, ptr->speed, ptr->z);
+				ptr++;
+			}
 			GPMF_ResetState(ms);
-			printf("\n");
 		}
 
 		free(measurements);
