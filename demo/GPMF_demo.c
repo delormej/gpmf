@@ -79,8 +79,8 @@ uint32_t GetGPMField(const char* field, GPMF_stream* ms, double in, double out, 
 				}
 				
 			}
-			free(tmpbuffer);
 		}
+		free(tmpbuffer);
 		return samples;
 	}	
 	else
@@ -147,14 +147,13 @@ int main(int argc, char *argv[])
 			measurement* ptr = measurements;
 			for (i = 0; i < samples; i++) {
 				double seconds = GetSeconds(i, in);
-				printf("%.2f, %.5f, %.5f, %.2f, %.5f\n", seconds, ptr->lat, ptr->lon, ptr->speed, ptr->z);
+				printf("%.2f, %.6f, %.6f, %.2f, %.5f\n", seconds, ptr->lat, ptr->lon, ptr->speed, ptr->z);
 				ptr++;
 			}
 			GPMF_ResetState(ms);
 		}
-
-		free(measurements);
-
+		
+		/*
 		// Find all the available Streams and compute they sample rates
 		while (GPMF_OK == GPMF_FindNext(ms, GPMF_KEY_STREAM, GPMF_RECURSE_LEVELS))
 		{
@@ -165,10 +164,12 @@ int main(int argc, char *argv[])
 				printf("%c%c%c%c sampling rate = %f Hz\n", PRINTF_4CC(fourcc), rate);
 			}
 		}
+		*/
 
 	cleanup:
 		if (payload) FreeGPMFPayload(payload); payload = NULL;
 		CloseGPMFSource();
+		free(measurements);
 	}
 
 	return ret;
