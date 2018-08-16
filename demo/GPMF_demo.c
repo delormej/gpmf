@@ -37,7 +37,8 @@ double GetAverageZ(double* buffer) {
 	const int SAMPLE_SIZE = 22;  // 399 / 18
 	double avg, total = 0.0;
 	double* ptr = buffer;
-	for (int i = 0; i < SAMPLE_SIZE; i++) {
+	int i = 0;
+	for (; i < SAMPLE_SIZE; i++) {
 		total += *ptr;
 		ptr+=3; // advance to the next sample.
 	}
