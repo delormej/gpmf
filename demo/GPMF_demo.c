@@ -184,6 +184,7 @@ int main(int argc, char *argv[])
 		if (payload) FreeGPMFPayload(payload); payload = NULL;
 		CloseGPMFSource();
 		free(measurements); 
+		free(tmpbuffer);
 	}
 
 	return ret;
