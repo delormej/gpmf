@@ -33,6 +33,9 @@ typedef struct {
 
 extern void PrintGPMF(GPMF_stream *ms);
 
+static double *tmpbuffer;
+static uint32_t biggestbuffer = 10240;
+
 double GetAverageZ(double* buffer) {
 	const int SAMPLE_SIZE = 22;  // 399 / 18
 	double avg, total = 0.0;
@@ -51,37 +54,44 @@ double GetSeconds(uint32_t sample, double startTime) {
 	return startTime + ((1.0/SAMPLES)*sample);
 }
 
-uint32_t GetGPMField(const char* field, GPMF_stream* ms, double in, double out, measurement* m) {
+uint32_t GetGPMField(const char* field, GPMF_stream* ms, measurement* m) {
 	if (GPMF_OK == GPMF_FindNext(ms, STR2FOURCC(field), GPMF_RECURSE_LEVELS))  
 	{
 		uint32_t key = GPMF_Key(ms);
 		uint32_t samples = GPMF_Repeat(ms);
 		uint32_t elements = GPMF_ElementsInStruct(ms);
 		uint32_t buffersize = samples * elements * sizeof(double);
-		double *ptr, *tmpbuffer = malloc(buffersize);
+		
+		if (buffersize > biggestbuffer) 
+		{
+			tmpbuffer = realloc(tmpbuffer, buffersize);
+			biggestbuffer = buffersize;
+		}
 
 		if (tmpbuffer && samples)
 		{
 			uint32_t i, j;
+			
 			GPMF_ScaledData(ms, tmpbuffer, buffersize, 0, samples, GPMF_TYPE_DOUBLE);  //Output scaled data as floats
-			ptr = tmpbuffer;
+			//ptr = tmpbuffer;
 			for (i = 0; i < samples; i++)
 			{
 				measurement* mptr = (m+i);
 				if (key == STR2FOURCC("GPS5")) {
-					mptr->lat = *ptr;
-					mptr->lon = *(ptr+1);
-					mptr->speed = *(ptr+3);
-					ptr += elements; // advance to the next sample.
+					mptr->lat = *tmpbuffer;
+					mptr->lon = *(tmpbuffer+1);
+					mptr->speed = *(tmpbuffer+3);
+					//ptr += elements; // advance to the next sample.
 				}
 				else if (key == STR2FOURCC("GYRO")) {
-					mptr->z = GetAverageZ(ptr);
-					ptr += elements * 22; // advance 22 records
+					mptr->z = GetAverageZ(tmpbuffer);
+					//ptr += elements * 22; // advance 22 records
 				}
-				
 			}
+			//free(tmpbuffer);
+			//tmpbuffer = NULL;
 		}
-		free(tmpbuffer);
+		
 		return samples;
 	}	
 	else
@@ -107,6 +117,7 @@ int main(int argc, char *argv[])
 	GPMF_stream metadata_stream, *ms = &metadata_stream;
 	double metadatalength;
 	uint32_t *payload = NULL; //buffer to store GPMF samples from the MP4.
+	tmpbuffer = malloc(biggestbuffer);
 
 	// get file return data
 	if (argc != 2)
@@ -142,9 +153,9 @@ int main(int argc, char *argv[])
 	
 			const char* gyro = "GYRO"; //ACCL
 			const char* gps = "GPS5"; //ACCL
-			uint32_t i, samples = GetGPMField(gps, ms, in, out, measurements);
+			uint32_t i, samples = GetGPMField(gps, ms, measurements);
 			GPMF_ResetState(ms);
-			GetGPMField(gyro, ms, in, out, measurements);
+			GetGPMField(gyro, ms, measurements);
 			measurement* ptr = measurements;
 			for (i = 0; i < samples; i++) {
 				double seconds = GetSeconds(i, in);
@@ -167,10 +178,12 @@ int main(int argc, char *argv[])
 		}
 		*/
 
+		//printf("Biggest buffer was: %i\n", biggestbuffer);
+
 	cleanup:
 		if (payload) FreeGPMFPayload(payload); payload = NULL;
 		CloseGPMFSource();
-		free(measurements);
+		free(measurements); 
 	}
 
 	return ret;

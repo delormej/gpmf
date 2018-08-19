@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "__locale": "c",
+        "ios": "c",
+        "locale": "c",
+        "chrono": "c"
+    }
+}
