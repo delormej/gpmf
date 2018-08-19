@@ -64,9 +64,8 @@ uint32_t GetGPMField(const char* field, GPMF_stream* ms, measurement* m) {
 		
 		if (buffersize > biggestbuffer) 
 		{
-			tmpbuffer = realloc(tmpbuffer, buffersize);
-			biggestbuffer = buffersize;
-			printf("New realloc is: %i\n", buffersize);
+			printf("Buffer is too big: %i\n", buffersize);
+			return 0;
 		}
 
 		if (tmpbuffer && samples)
