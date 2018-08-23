@@ -26,15 +26,13 @@
 
 #include "../GPMF_parser.h"
 #include "GPMF_mp4reader.h"
+#define BUFFER_SIZE 10240
 
 typedef struct {
 	double lat, lon, speed, z;
 } measurement;
 
 extern void PrintGPMF(GPMF_stream *ms);
-
-static double *tmpbuffer;
-static uint32_t biggestbuffer = 10240;
 
 double GetAverageZ(double* buffer) {
 	const int SAMPLE_SIZE = 22;  // 399 / 18
@@ -61,14 +59,19 @@ uint32_t GetGPMField(const char* field, GPMF_stream* ms, measurement* m) {
 		uint32_t samples = GPMF_Repeat(ms);
 		uint32_t elements = GPMF_ElementsInStruct(ms);
 		uint32_t buffersize = samples * elements * sizeof(double);
+		double tmpbuffer[BUFFER_SIZE];
 		
-		if (buffersize > biggestbuffer) 
+		if (buffersize > BUFFER_SIZE) 
 		{
 			printf("Buffer is too big: %i\n", buffersize);
 			return 0;
 		}
+		else
+		{
+			memset(tmpbuffer, 0, BUFFER_SIZE);
+		}
 
-		if (tmpbuffer && samples)
+		if (samples)
 		{
 			uint32_t i, j;
 			
@@ -88,8 +91,6 @@ uint32_t GetGPMField(const char* field, GPMF_stream* ms, measurement* m) {
 					//ptr += elements * 22; // advance 22 records
 				}
 			}
-			//free(tmpbuffer);
-			//tmpbuffer = NULL;
 		}
 		
 		return samples;
@@ -117,7 +118,6 @@ int main(int argc, char *argv[])
 	GPMF_stream metadata_stream, *ms = &metadata_stream;
 	double metadatalength;
 	uint32_t *payload = NULL; //buffer to store GPMF samples from the MP4.
-	tmpbuffer = malloc(biggestbuffer);
 
 	// get file return data
 	if (argc != 2)
@@ -184,7 +184,6 @@ int main(int argc, char *argv[])
 		if (payload) FreeGPMFPayload(payload); payload = NULL;
 		CloseGPMFSource();
 		free(measurements); 
-		free(tmpbuffer);
 	}
 
 	return ret;
