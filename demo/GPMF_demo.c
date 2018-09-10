@@ -69,7 +69,7 @@ int printSamples(GPMF_stream *ms, char* fourCC, float in, float out)
 			{
 				printf("%c%c%c%c, ", PRINTF_4CC(key));
 				for (j = 0; j < elements; j++)
-					printf("%.6f, ", *ptr++);
+					printf("%.8f, ", *ptr++);
 				printf("\n");
 			}
 			free(tmpbuffer);
