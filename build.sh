@@ -1,3 +1,6 @@
+#!/bin/bash
+# Remove existing build artifact if dir exists. 
+rm -rf build
 
 # create directory if it doesn't already exist
 mkdir -p build/ 
