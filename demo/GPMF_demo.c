@@ -119,7 +119,10 @@ int main(int argc, char *argv[])
 			
 			// Don't print unless you have GPS data.
 			if (printSamples(ms, "GPS5", in, out) == GPMF_HAS_SAMPLES)
+			{
+				printSamples(ms, "GPSP", in, out);
 				printSamples(ms, "GYRO", in, out);		
+			}
 		}
 
 	cleanup:
