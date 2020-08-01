@@ -82,6 +82,18 @@ int printSamples(GPMF_stream *ms, char* fourCC, float in, float out)
 	return ret;
 }
 
+void printUTCDate(GPMF_stream *ms)
+{
+	if (GPMF_OK == GPMF_FindNext(ms, STR2FOURCC("GPSU"), GPMF_RECURSE_LEVELS))
+	{
+		uint32_t key = GPMF_Key(ms);
+		char GSPU[17];
+		GPMF_FormattedData(ms, GSPU, 16, 0, 1);
+		GSPU[16] = 0;
+		printf("%c%c%c%c, %s\n", PRINTF_4CC(key), GSPU);
+	}	
+}
+
 int main(int argc, char *argv[])
 {
 	int32_t ret = GPMF_OK;
@@ -117,6 +129,8 @@ int main(int argc, char *argv[])
 			if (ret != GPMF_OK)
 				goto cleanup;
 			
+			printUTCDate(ms);
+
 			// Don't print unless you have GPS data.
 			if (printSamples(ms, "GPS5", in, out) == GPMF_HAS_SAMPLES)
 			{
